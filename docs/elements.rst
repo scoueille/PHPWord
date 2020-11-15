@@ -61,7 +61,7 @@ Legend:
 Texts
 -----
 
-Text can be added by using ``addText`` and ``addTextRun`` method.
+Text can be added by using ``addText`` and ``addTextRun`` methods.
 ``addText`` is used for creating simple paragraphs that only contain texts with the same style.
 ``addTextRun`` is used for creating complex paragraphs that contain text with different style (some bold, other
 italics, etc) or other elements, e.g. images or links. The syntaxes are as follow:
@@ -155,13 +155,18 @@ method or using the ``pageBreakBefore`` style of paragraph.
 Lists
 -----
 
-To add a list item use the function ``addListItem``.
+Lists can be added by using ``addListItem`` and ``addListItemRun`` methods.
+``addListItem`` is used for creating lists that only contain plain text.
+``addListItemRun`` is used for creating complex list items that contains texts
+with different style (some bold, other italics, etc) or other elements, e.g.
+images or links. The syntaxes are as follow:
 
 Basic usage:
 
 .. code-block:: php
 
     $section->addListItem($text, [$depth], [$fontStyle], [$listStyle], [$paragraphStyle]);
+    $listItemRun = $section->addListItemRun([$depth], [$listStyle], [$paragraphStyle])
 
 Parameters:
 
@@ -171,6 +176,8 @@ Parameters:
 - ``$listStyle``. List style of the current element TYPE\_NUMBER,
   TYPE\_ALPHANUM, TYPE\_BULLET\_FILLED, etc. See list of constants in PHPWord\\Style\\ListItem.
 - ``$paragraphStyle``. See :ref:`paragraph-style`.
+
+See ``Sample_09_Tables.php`` for more code sample.
 
 Advanced usage:
 
@@ -352,17 +359,17 @@ The footnote numbering can be controlled by setting the FootnoteProperties on th
 
 .. code-block:: php
 
-    $fp = new PhpWord\SimpleType\FootnoteProperties();
+    $fp = new \PhpOffice\PhpWord\ComplexType\FootnoteProperties();
     //sets the position of the footnote (pageBottom (default), beneathText, sectEnd, docEnd)
-    $fp->setPos(FootnoteProperties::POSITION_DOC_END);
+    $fp->setPos(\PhpOffice\PhpWord\ComplexType\FootnoteProperties::POSITION_BENEATH_TEXT);
     //set the number format to use (decimal (default), upperRoman, upperLetter, ...)
-    $fp->setNumFmt(FootnoteProperties::NUMBER_FORMAT_LOWER_ROMAN);
+    $fp->setNumFmt(\PhpOffice\PhpWord\SimpleType\NumberFormat::LOWER_ROMAN);
     //force starting at other than 1
     $fp->setNumStart(2);
     //when to restart counting (continuous (default), eachSect, eachPage)
-    $fp->setNumRestart(FootnoteProperties::RESTART_NUMBER_EACH_PAGE);
+    $fp->setNumRestart(\PhpOffice\PhpWord\ComplexType\FootnoteProperties::RESTART_NUMBER_EACH_PAGE);
     //And finaly, set it on the Section
-    $section->setFootnoteProperties($properties);
+    $section->setFootnoteProperties($fp);
 
 Checkboxes
 ----------
@@ -396,7 +403,9 @@ Currently the following fields are supported:
 
 .. code-block:: php
 
-    $section->addField($fieldType, [$properties], [$options], [$fieldText])
+    $section->addField($fieldType, [$properties], [$options], [$fieldText], [$fontStyle])
+
+- ``$fontStyle``. See :ref:`font-style`.
 
 See ``\PhpOffice\PhpWord\Element\Field`` for list of properties and options available for each field type.
 Options which are not specifically defined can be added. Those must start with a ``\``.

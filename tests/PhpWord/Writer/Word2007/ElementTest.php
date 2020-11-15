@@ -296,6 +296,41 @@ class ElementTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals(' INDEX \\c "3" ', $doc->getElement($element)->textContent);
     }
 
+    public function testUnstyledFieldElement()
+    {
+        $phpWord = new PhpWord();
+        $phpWord->addFontStyle('h1', array('name' => 'Courier New', 'size' => 8));
+        $section = $phpWord->addSection();
+
+        $section->addField('PAGE');
+        $doc = TestHelperDOCX::getDocument($phpWord);
+
+        $element = '/w:document/w:body/w:p/w:r[2]/w:instrText';
+        $this->assertTrue($doc->elementExists($element));
+        $this->assertEquals(' PAGE ', $doc->getElement($element)->textContent);
+        $sty = '/w:document/w:body/w:p/w:r[2]/w:rPr';
+        $this->assertFalse($doc->elementExists($sty));
+    }
+
+    public function testStyledFieldElement()
+    {
+        $phpWord = new PhpWord();
+        $stnam = 'h1';
+        $phpWord->addFontStyle($stnam, array('name' => 'Courier New', 'size' => 8));
+        $section = $phpWord->addSection();
+
+        $fld = $section->addField('PAGE');
+        $fld->setFontStyle($stnam);
+        $doc = TestHelperDOCX::getDocument($phpWord);
+
+        $element = '/w:document/w:body/w:p/w:r[2]/w:instrText';
+        $this->assertTrue($doc->elementExists($element));
+        $this->assertEquals(' PAGE ', $doc->getElement($element)->textContent);
+        $sty = '/w:document/w:body/w:p/w:r[2]/w:rPr';
+        $this->assertTrue($doc->elementExists($sty));
+        $this->assertEquals($stnam, $doc->getElementAttribute($sty . '/w:rStyle', 'w:val'));
+    }
+
     public function testFieldElementWithComplexText()
     {
         $phpWord = new PhpWord();
@@ -387,6 +422,7 @@ class ElementTest extends \PHPUnit\Framework\TestCase
         $section->addSDT('comboBox')->setListItems(array('1' => 'Choice 1', '2' => 'Choice 2'))->setValue('select value');
         $section->addSDT('dropDownList');
         $section->addSDT('date')->setAlias('date_alias')->setTag('my_tag');
+        $section->addSDT('plainText');
 
         $doc = TestHelperDOCX::getDocument($phpWord);
 
@@ -405,6 +441,8 @@ class ElementTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue($doc->elementExists($path . '[3]/w:sdt/w:sdtPr/w:date'));
         $this->assertTrue($doc->elementExists($path . '[3]/w:sdt/w:sdtPr/w:alias'));
         $this->assertTrue($doc->elementExists($path . '[3]/w:sdt/w:sdtPr/w:tag'));
+
+        $this->assertTrue($doc->elementExists($path . '[4]/w:sdt/w:sdtPr/w:text'));
     }
 
     /**
@@ -491,5 +529,41 @@ class ElementTest extends \PHPUnit\Framework\TestCase
         $this->assertEquals('Heading 1', $doc->getElement('/w:document/w:body/w:p[2]/w:r/w:t')->textContent);
         $this->assertTrue($doc->elementExists('/w:document/w:body/w:p[2]/w:pPr/w:pStyle'));
         $this->assertEquals('Heading1', $doc->getElementAttribute('/w:document/w:body/w:p[2]/w:pPr/w:pStyle', 'w:val'));
+    }
+
+    /**
+     * Test correct writing of text with ampersant in it
+     */
+    public function testTextWithAmpersant()
+    {
+        \PhpOffice\PhpWord\Settings::setOutputEscapingEnabled(true);
+        $phpWord = new PhpWord();
+        $section = $phpWord->addSection();
+        $section->addText('this text contains an & (ampersant)');
+
+        $doc = TestHelperDOCX::getDocument($phpWord);
+        $this->assertTrue($doc->elementExists('/w:document/w:body/w:p/w:r/w:t'));
+        $this->assertEquals('this text contains an & (ampersant)', $doc->getElement('/w:document/w:body/w:p/w:r/w:t')->nodeValue);
+    }
+
+    /**
+     * Test ListItemRun paragraph style writing
+     */
+    public function testListItemRunStyleWriting()
+    {
+        $phpWord = new PhpWord();
+        $phpWord->addParagraphStyle('MyParagraphStyle', array('spaceBefore' => 400));
+
+        $section = $phpWord->addSection();
+        $listItemRun = $section->addListItemRun(0, null, 'MyParagraphStyle');
+        $listItemRun->addText('List item');
+        $listItemRun->addText(' in bold', array('bold' => true));
+
+        $doc = TestHelperDOCX::getDocument($phpWord);
+        $this->assertFalse($doc->elementExists('/w:document/w:body/w:p/w:pPr/w:pPr'));
+        $this->assertTrue($doc->elementExists('/w:document/w:body/w:p/w:pPr/w:pStyle'));
+        $this->assertEquals('List item', $doc->getElement('/w:document/w:body/w:p/w:r[1]/w:t')->nodeValue);
+        $this->assertEquals(' in bold', $doc->getElement('/w:document/w:body/w:p/w:r[2]/w:t')->nodeValue);
+        $this->assertTrue($doc->elementExists('/w:document/w:body/w:p/w:r[2]/w:rPr/w:b'));
     }
 }

@@ -1,6 +1,6 @@
 language: php
 
-dist: precise
+dist: xenial
 
 php:
     - 5.3
@@ -10,11 +10,30 @@ php:
     - 7.0
     - 7.1
     - 7.2
+    - 7.3
+    - 7.4snapshot
 
 matrix:
     include:
+        - php: 5.3
+          dist: precise
+          env: COMPOSER_MEMORY_LIMIT=3G
+        - php: 5.4
+          dist: trusty
+        - php: 5.5
+          dist: trusty
         - php: 7.0
           env: COVERAGE=1
+        - php: 7.3
+          env: DEPENDENCIES="--ignore-platform-reqs"
+    exclude:
+        - php: 5.3
+        - php: 5.4
+        - php: 5.5
+        - php: 7.0
+        - php: 7.3
+    allow_failures:
+        - php: 7.4snapshot
 
 cache:
     directories:
@@ -27,15 +46,16 @@ env:
 
 before_install:
     ## Packages
+    - sudo rm -f /etc/apt/sources.list.d/mongodb.list  # Makes apt crash on Precise, and we don't need MongoDB
     - sudo apt-get update -qq
     - sudo apt-get install -y graphviz
 
 before_script:
     ## Deactivate xdebug if we don't do code coverage
-    - if [ -z "$COVERAGE" ]; then phpenv config-rm xdebug.ini ; fi
+    - if [ -z "$COVERAGE" ]; then phpenv config-rm xdebug.ini || echo "xdebug not available" ; fi
     ## Composer
     - composer self-update
-    - travis_wait composer install --prefer-source
+    - travis_wait composer install --prefer-source $(if [ -n "$DEPENDENCIES" ]; then echo $DEPENDENCIES; fi)
     ## PHPDocumentor
     ##- mkdir -p build/docs
     - mkdir -p build/coverage
